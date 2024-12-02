@@ -3,31 +3,25 @@
 
 void sendByte(uint8_t value, int pin, int delayTime)
 {
+    // Send start signal
     digitalWrite(pin, HIGH);
-    // Record the start time once at the beginning
-    unsigned long startTime = micros();
+    delayMicroseconds(delayTime);
 
-    unsigned long targetTime = startTime + delayTime;
+    unsigned long startTime = micros() + delayTime;
 
-    while (micros() < targetTime)
-        ;
-
-    // Send each bit, starting with the MSB
+    // Send each bit (LSB-first)
     for (uint8_t i = 0; i < 8; i++)
     {
-        // Extract the bit at position `i`
-        bool bit = (value & (1 << i)) != 0;
-
-        // Write HIGH or LOW to the pin
+        bool bit = (value & (1 << i)) != 0; // Extract bit `i`
         digitalWrite(pin, bit ? HIGH : LOW);
 
-        // Calculate the target time for this bit
-        unsigned long targetTime = startTime + ((i + 1) * delayTime);
-
-        // Wait until it's time to send the current bit
-        while (micros() < targetTime)
-        {
-        }
+        // Wait for the bit duration
+        unsigned long bitEndTime = startTime + (i * delayTime);
+        while (micros() < bitEndTime)
+            ;
     }
+
+    // Send end signal
     digitalWrite(pin, LOW);
+    delayMicroseconds(delayTime);
 }

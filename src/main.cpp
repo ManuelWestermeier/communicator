@@ -1,4 +1,3 @@
-// filepath: src/main.cpp
 #include <Arduino.h>
 
 #include "./user.hpp"
@@ -6,7 +5,7 @@
 #include "./read-byte.hpp"
 
 #define DATA_PIN 25
-#define DEFAULT_SEND_FREQUENCY 50000
+#define DEFAULT_SEND_FREQUENCY 100
 
 void setup()
 {
@@ -21,9 +20,16 @@ void setup()
 void loop()
 {
 #if IS_SENDING
-    sendByte(123, DATA_PIN, DEFAULT_SEND_FREQUENCY);
-    delay(1000);
+    String text = "Hallo du! Dies ist ein test Satz!\n";
+
+    for (uint8_t i = 0; i < text.length(); i++)
+    {
+        sendByte(text[i], DATA_PIN, DEFAULT_SEND_FREQUENCY);
+        delayMicroseconds(DEFAULT_SEND_FREQUENCY);
+    }
+
+    delay(500);
 #else
-    Serial.println("received: " + String(readByte(DATA_PIN, DEFAULT_SEND_FREQUENCY))); // Corrected "recieved" to "received"
+    Serial.write((char)readByte(DATA_PIN, DEFAULT_SEND_FREQUENCY)); // Corrected "recieved" to "received"
 #endif
 }

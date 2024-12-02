@@ -3,34 +3,35 @@
 
 uint8_t readByte(int pin, int delayTime)
 {
+    // Wait for the start signal (HIGH state)
     while (digitalRead(pin) != HIGH)
         ;
-    // Record the start time once at the beginning
+
+    // Record the start time
     unsigned long startTime = micros();
-
-    unsigned long targetTime = startTime + 1.5 * delayTime;
-
-    while (micros() < targetTime)
-        ;
 
     uint8_t value = 0;
 
-    // Read each bit, starting with the LSB
+    // Read each bit
     for (uint8_t i = 0; i < 8; i++)
     {
+        // Calculate the target time for this bit
+        unsigned long bitStartTime = startTime + ((i + 1.5) * delayTime);
+
+        // Wait for the correct time
+        while (micros() < bitStartTime)
+            ;
+
+        // Sample the bit
         if (digitalRead(pin) == HIGH)
         {
-            value |= (1 << i); // LSB-first order
-        }
-
-        // Calculate the target time for this bit
-        unsigned long bitTargetTime = startTime + ((i + 1.5) * delayTime);
-
-        // Wait until it's time to read the current bit
-        while (micros() < bitTargetTime)
-        {
+            value |= (1 << i); // Set bit in LSB-first order
         }
     }
+
+    // Wait for the end of the transmission
+    while (digitalRead(pin) == HIGH)
+        ;
 
     return value;
 }

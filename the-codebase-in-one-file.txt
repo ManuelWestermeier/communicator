@@ -7,12 +7,12 @@
 #include "./read-byte.hpp"
 
 #define DATA_PIN 25
-#define DEFAULT_SEND_FREQUENCY 50000
+#define DEFAULT_SEND_FREQUENCY 10000
 
 void setup()
 {
     Serial.begin(115200);
-    Serial.println(IS_SENDING ? "SENDER" : "RECIEVER");
+    Serial.println(IS_SENDING ? "SENDER" : "RECEIVER"); // Corrected typo in "RECEIVER"
 
     pinMode(DATA_PIN, IS_SENDING ? OUTPUT : INPUT);
     if (IS_SENDING)
@@ -22,10 +22,13 @@ void setup()
 void loop()
 {
 #if IS_SENDING
-    sendByte(123, DATA_PIN, DEFAULT_SEND_FREQUENCY);
-    delay(1000);
+    for (uint8_t i = 0; i < 100; i++)
+    {
+        sendByte(i, DATA_PIN, DEFAULT_SEND_FREQUENCY);
+        delay(1000);
+    }
 #else
-    Serial.println("recieved: " + String(readByte(DATA_PIN, DEFAULT_SEND_FREQUENCY)));
+    Serial.println("received: " + String(readByte(DATA_PIN, DEFAULT_SEND_FREQUENCY))); // Corrected "recieved" to "received"
 #endif
 }
 
@@ -35,34 +38,39 @@ void loop()
 
 uint8_t readByte(int pin, int delayTime)
 {
+    // Wait for the start signal (HIGH state)
     while (digitalRead(pin) != HIGH)
         ;
-    // Record the start time once at the beginning
-    unsigned long startTime = micros();
 
+    // Record start time
+    unsigned long startTime = micros();
     unsigned long targetTime = startTime + 1.5 * delayTime;
 
+    // Ensure stable HIGH signal
     while (micros() < targetTime)
         ;
 
     uint8_t value = 0;
 
-    // Send each bit, starting with the MSB
+    // Read each bit
     for (uint8_t i = 0; i < 8; i++)
     {
+        unsigned long bitStartTime = startTime + ((i + 1.5) * delayTime);
+
+        // Wait for the right time to read the bit
+        while (micros() < bitStartTime)
+            ;
+
+        // Sample the bit
         if (digitalRead(pin) == HIGH)
         {
-            value += 1 < i;
-        }
-
-        // Calculate the target time for this bit
-        unsigned long targetTime = startTime + ((i + 1.5) * delayTime);
-
-        // Wait until it's time to send the current bit
-        while (micros() < targetTime)
-        {
+            value |= (1 << i);
         }
     }
+
+    // Wait for the end of the transmission
+    while (digitalRead(pin) == HIGH)
+        ;
 
     return value;
 }
@@ -74,37 +82,33 @@ uint8_t readByte(int pin, int delayTime)
 
 void sendByte(uint8_t value, int pin, int delayTime)
 {
+    // Start signal
     digitalWrite(pin, HIGH);
-    // Record the start time once at the beginning
+    delayMicroseconds(delayTime);
+    digitalWrite(pin, LOW);
+    delayMicroseconds(delayTime);
+
     unsigned long startTime = micros();
 
-    unsigned long targetTime = startTime + delayTime;
-
-    while (micros() < targetTime)
-        ;
-
-    // Send each bit, starting with the MSB
+    // Send each bit
     for (uint8_t i = 0; i < 8; i++)
     {
-        // Extract the bit at position `i`
         bool bit = (value & (1 << i)) != 0;
-
-        // Write HIGH or LOW to the pin
         digitalWrite(pin, bit ? HIGH : LOW);
 
-        // Calculate the target time for this bit
-        unsigned long targetTime = startTime + ((i + 1) * delayTime);
-
-        // Wait until it's time to send the current bit
-        while (micros() < targetTime)
-        {
-        }
+        // Wait for the bit duration
+        unsigned long bitEndTime = startTime + ((i + 1) * delayTime);
+        while (micros() < bitEndTime)
+            ;
     }
-    digitalWrite(pin, LOW);
-}
 
+    // End signal
+    digitalWrite(pin, LOW);
+    delayMicroseconds(delayTime);
+}
 
 //filepath: src\user.hpp
 #pragma once
 // Don't edit this file
 #define IS_SENDING true
+
