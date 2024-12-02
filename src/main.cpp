@@ -1,34 +1,33 @@
 #include <Arduino.h>
 
 #include "./user.hpp"
-#include "./send-string.hpp"
-#include "./read-string.hpp"
+#include "./node/node.hpp"
 
-#define DATA_PIN 25
-#define DEFAULT_SEND_FREQUENCY 50
+#define INP_PIN_SENDER 26
+#define INP_PIN_RECIEVER 25
+
+#define DEFAULT_SEND_DELAY 50
+
+Node node{
+    IS_SENDING ? INP_PIN_SENDER : INP_PIN_RECIEVER,
+    !IS_SENDING ? INP_PIN_SENDER : INP_PIN_RECIEVER,
+    DEFAULT_SEND_DELAY,
+};
 
 void setup()
 {
     Serial.begin(115200);
     Serial.println(IS_SENDING ? "SENDER" : "RECEIVER"); // Corrected typo in "RECEIVER"
-
-    pinMode(DATA_PIN, IS_SENDING ? OUTPUT : INPUT);
-    if (IS_SENDING)
-        digitalWrite(DATA_PIN, LOW); // Set initial state
+    node.init();
 }
 
 void loop()
 {
 #if IS_SENDING
-    sendString("Hallo du! Dies ist ein test Satz!", DATA_PIN, DEFAULT_SEND_FREQUENCY);
-    delay(2000);
+    node.sendString("Hello World");
 #else
-    String value = readString(DATA_PIN, DEFAULT_SEND_FREQUENCY);
-
-    if (value == "")
-        Serial.println("ERROR: VALUE IS EMPTY");
-    else
+    String value = node.readString();
+    if (value)
         Serial.println(value);
-        // Serial.write((char)readByte(DATA_PIN, DEFAULT_SEND_FREQUENCY)); // Corrected "recieved" to "received"
 #endif
 }

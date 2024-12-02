@@ -4,10 +4,10 @@
 
 #include "./read-byte.hpp"
 
-String readString(int pin, int delayTime)
+String rawReadString(int pin, int delayTime)
 {
-    uint8_t receivedHash = readByte(pin, delayTime);
-    int length = (readByte(pin, delayTime) << 8) + readByte(pin, delayTime);
+    uint8_t receivedHash = rawReadByte(pin, delayTime);
+    int length = (rawReadByte(pin, delayTime) << 8) + rawReadByte(pin, delayTime);
 
     // basic hash for the length
     uint8_t lengthHash = ((length >> 8) & 0x0F) ^ (length & 0x0F);
@@ -21,12 +21,12 @@ String readString(int pin, int delayTime)
 
     for (uint8_t i = 0; i < length; i++)
     {
-        uint8_t value = readByte(pin, delayTime);
+        uint8_t value = rawReadByte(pin, delayTime);
         string[i] = value;
         dataHash ^= value;
     }
 
-    uint8_t receivedDataHash = readByte(pin, delayTime);
+    uint8_t receivedDataHash = rawReadByte(pin, delayTime);
     if (dataHash != receivedDataHash)
     {
         delete[] string;

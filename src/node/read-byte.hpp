@@ -1,7 +1,7 @@
 #pragma once
 #include <Arduino.h>
 
-uint8_t readByte(int pin, int delayTime)
+uint8_t rawReadByte(int pin, int delayTime)
 {
     // Wait for the start signal (HIGH state)
     while (digitalRead(pin) != HIGH)

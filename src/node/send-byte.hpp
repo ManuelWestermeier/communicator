@@ -1,7 +1,7 @@
 #pragma once
 #include <Arduino.h>
 
-void sendByte(uint8_t value, int pin, int delayTime)
+void rawSendByte(uint8_t value, int pin, int delayTime)
 {
     // Send start signal
     digitalWrite(pin, HIGH);
