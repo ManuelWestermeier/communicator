@@ -3,11 +3,11 @@
 #include <Arduino.h>
 
 #include "./user.hpp"
-#include "./send-byte.hpp"
-#include "./read-byte.hpp"
+#include "./send-string.hpp"
+#include "./read-string.hpp"
 
 #define DATA_PIN 25
-#define DEFAULT_SEND_FREQUENCY 10000
+#define DEFAULT_SEND_FREQUENCY 50
 
 void setup()
 {
@@ -22,13 +22,16 @@ void setup()
 void loop()
 {
 #if IS_SENDING
-    for (uint8_t i = 0; i < 100; i++)
-    {
-        sendByte(i, DATA_PIN, DEFAULT_SEND_FREQUENCY);
-        delay(1000);
-    }
+    sendText("Hallo du! Dies ist ein test Satz!", DATA_PIN, DEFAULT_SEND_FREQUENCY);
+    delay(2000);
 #else
-    Serial.println("received: " + String(readByte(DATA_PIN, DEFAULT_SEND_FREQUENCY))); // Corrected "recieved" to "received"
+    String value = readString(DATA_PIN, DEFAULT_SEND_FREQUENCY);
+
+    if (value == "")
+        Serial.println("ERROR: VALUE IS EMPTY");
+    else
+        Serial.println(value);
+        // Serial.write((char)readByte(DATA_PIN, DEFAULT_SEND_FREQUENCY)); // Corrected "recieved" to "received"
 #endif
 }
 
@@ -42,29 +45,25 @@ uint8_t readByte(int pin, int delayTime)
     while (digitalRead(pin) != HIGH)
         ;
 
-    // Record start time
+    // Record the start time
     unsigned long startTime = micros();
-    unsigned long targetTime = startTime + 1.5 * delayTime;
-
-    // Ensure stable HIGH signal
-    while (micros() < targetTime)
-        ;
 
     uint8_t value = 0;
 
     // Read each bit
     for (uint8_t i = 0; i < 8; i++)
     {
+        // Calculate the target time for this bit
         unsigned long bitStartTime = startTime + ((i + 1.5) * delayTime);
 
-        // Wait for the right time to read the bit
+        // Wait for the correct time
         while (micros() < bitStartTime)
             ;
 
         // Sample the bit
         if (digitalRead(pin) == HIGH)
         {
-            value |= (1 << i);
+            value |= (1 << i); // Set bit in LSB-first order
         }
     }
 
@@ -76,34 +75,119 @@ uint8_t readByte(int pin, int delayTime)
 }
 
 
+//filepath: src\read-string.hpp
+#pragma once
+
+#include <Arduino.h>
+
+#include "./read-byte.hpp"
+
+String readString(int pin, int delayTime)
+{
+    uint8_t recievedHash = readByte(pin, delayTime);
+    int length = readByte(pin, delayTime) << 8 + readByte(pin, delayTime);
+
+    // basic hash for the length
+    uint8_t lengthHash = (length >> 8 & 0x0F) ^ (length & 0x0F);
+
+    Serial.println(String(recievedHash) + " " + String(lengthHash) + " " + length);
+
+    if (lengthHash != recievedHash)
+        return "";
+    Serial.println("3");
+
+    char *string = new char[length];
+
+    Serial.println("4");
+    // the data hash
+    uint8_t dataHash = 0;
+    //  the data
+    for (uint8_t i = 0; i < length; i++)
+    {
+        uint8_t value = readByte(pin, delayTime);
+        string[i] = value;
+        dataHash ^= value;
+    }
+    Serial.println("5");
+
+    uint8_t recievedDataHash = readByte(pin, delayTime);
+    Serial.println("6");
+
+    if (dataHash != recievedDataHash)
+    {
+        Serial.println("7");
+        delete[] string;
+        Serial.println("8");
+        return "";
+    }
+
+    Serial.println("9");
+    return String(string, length);
+}
+
 //filepath: src\send-byte.hpp
 #pragma once
 #include <Arduino.h>
 
 void sendByte(uint8_t value, int pin, int delayTime)
 {
-    // Start signal
+    // Send start signal
     digitalWrite(pin, HIGH);
     delayMicroseconds(delayTime);
-    digitalWrite(pin, LOW);
-    delayMicroseconds(delayTime);
 
-    unsigned long startTime = micros();
+    unsigned long startTime = micros() + delayTime;
 
-    // Send each bit
+    // Send each bit (LSB-first)
     for (uint8_t i = 0; i < 8; i++)
     {
-        bool bit = (value & (1 << i)) != 0;
+        bool bit = (value & (1 << i)) != 0; // Extract bit `i`
         digitalWrite(pin, bit ? HIGH : LOW);
 
         // Wait for the bit duration
-        unsigned long bitEndTime = startTime + ((i + 1) * delayTime);
+        unsigned long bitEndTime = startTime + (i * delayTime);
         while (micros() < bitEndTime)
             ;
     }
 
-    // End signal
+    // Send end signal
     digitalWrite(pin, LOW);
+    delayMicroseconds(delayTime);
+}
+
+//filepath: src\send-string.hpp
+#pragma once
+
+#include <Arduino.h>
+
+#include "./send-byte.hpp"
+
+void sendText(String text, int pin, int delayTime)
+{
+    // the size
+    int length = text.length();
+
+    // basic hash for the length
+    uint8_t hash = (length >> 8 & 0x0F) ^ (length & 0x0F);
+    sendByte(hash, pin, delayTime);
+    delayMicroseconds(delayTime);
+
+    // send the length of the string
+    sendByte(length >> 8 & 0x0F, pin, delayTime);
+    delayMicroseconds(delayTime);
+    sendByte(length & 0x0F, pin, delayTime);
+    delayMicroseconds(delayTime);
+
+    // the data hash
+    hash = 0;
+    //  the data
+    for (uint8_t i = 0; i < length; i++)
+    {
+        hash ^= text[i];
+        sendByte(text[i], pin, delayTime);
+        delayMicroseconds(delayTime);
+    }
+
+    sendByte(hash, pin, delayTime);
     delayMicroseconds(delayTime);
 }
 
