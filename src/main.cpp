@@ -6,7 +6,7 @@
 #define INP_PIN_SENDER 26
 #define INP_PIN_RECIEVER 25
 
-#define DEFAULT_SEND_DELAY 50
+#define DEFAULT_SEND_DELAY 40
 
 Node node{
     IS_SENDING ? INP_PIN_SENDER : INP_PIN_RECIEVER,
@@ -21,13 +21,19 @@ void setup()
     node.init();
 }
 
+long recievedIndex = 0;
+
 void loop()
 {
 #if IS_SENDING
-    node.sendString("Hello World");
+    node.sendString("trafficcar");
 #else
+    recievedIndex++;
     String value = node.readString();
-    if (value)
+    if (value == "")
+        Serial.println("ERROR: Invalid data received");
+    else
         Serial.println(value);
+    Serial.println(recievedIndex);
 #endif
 }

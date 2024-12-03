@@ -40,8 +40,8 @@ if errorlevel 1 (
     exit /b 1
 )
 
-REM Upload to COM7
-platformio run --target upload --upload-port COM7
+REM Upload to COM5
+platformio run --target upload --upload-port COM5
 if errorlevel 1 (
     echo Failed to upload to COM port 7. Aborting.
     exit /b 1
