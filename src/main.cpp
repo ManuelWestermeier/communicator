@@ -23,28 +23,29 @@ void setup()
 
 void loop()
 {
-#if true || IS_SENDING
+#if IS_SENDING
     node.sendByte(182);
-    uint8_t buffer[] = {
-        0x00,
-        0x01,
-        0x03,
-        0x10,
-    };
-    node.sendBuffer(Buffer(buffer, sizeof(buffer)));
+    // uint8_t buffer[] = {
+    //     0x00,
+    //     0x01,
+    //     0x03,
+    //     0x10,
+    // };
+    // node.sendBuffer(Buffer(buffer, sizeof(buffer)));
     node.sendString("trafficcar");
 #else
     // read a byte
     uint8_t byteValue = node.readByte();
     Serial.println("BYTE RECIEVED: " + String(byteValue, BIN));
 
-    // read a buffer
-    Buffer bufferValue = node.readBuffer();
-    if (bufferValue.length == 0)
-        Serial.println("ERROR: DATA LENGTH IS 0");
-    else
-        Serial.println("BUFFER RECIEVED: " + bufferValue.toString());
+    // // read a buffer
+    // Buffer bufferValue = node.readBuffer();
+    // if (bufferValue.length == 0)
+    //     Serial.println("ERROR: DATA LENGTH IS 0");
+    // else
+    //     Serial.println("BUFFER RECIEVED: " + bufferValue.toString());
     // read a string
+
     String stringValue = node.readString();
     if (stringValue == "")
         Serial.println("ERROR: Invalid data received");
