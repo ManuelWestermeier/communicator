@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include "./buffer.hpp"
 
 // bytes
 #include "./read-byte.hpp"
@@ -10,12 +11,16 @@
 #include "./read-string.hpp"
 #include "./send-string.hpp"
 
+// binarys
+#include "./read-buffer.hpp"
+#include "./send-buffer.hpp"
+
 struct Node
 {
-    u_int8_t inpPin, outPin;
+    uint8_t inpPin, outPin;
     int sendDelay;
 
-    Node(u_int8_t _inpPin, u_int8_t _outPin, int _sendDelay)
+    Node(uint8_t _inpPin, uint8_t _outPin, int _sendDelay)
     {
         inpPin = _inpPin;
         outPin = _outPin;
@@ -46,5 +51,15 @@ struct Node
     String readString()
     {
         return rawReadString(inpPin, sendDelay);
+    }
+
+    void sendBuffer(Buffer buffer)
+    {
+        rawSendBuffer(buffer, outPin, sendDelay);
+    }
+
+    Buffer readBuffer()
+    {
+        return rawReadBuffer(inpPin, sendDelay);
     }
 };
