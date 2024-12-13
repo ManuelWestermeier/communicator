@@ -6,6 +6,9 @@
 
 void rawSendBuffer(Buffer buffer, uint8_t pin, uint16_t delayTime)
 {
+    if (!buffer.data || !buffer.length)
+        return;
+
     // Get the size of the buffer
     uint16_t length = buffer.length;
 
