@@ -20,6 +20,8 @@ struct Node
     uint8_t inpPin, outPin;
     int sendDelay;
 
+    Node() {}
+
     Node(uint8_t _inpPin, uint8_t _outPin, int _sendDelay)
     {
         inpPin = _inpPin;
