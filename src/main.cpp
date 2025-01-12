@@ -8,7 +8,7 @@
 
 #define SEND_DELAY 25
 
-Network network;
+Networking::Network network;
 
 void setup()
 {
