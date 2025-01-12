@@ -10,59 +10,59 @@ struct Buffer
     // Constructor to initialize buffer
     Buffer(uint8_t *data = nullptr, uint16_t length = 0) : data(data), length(length) {}
 
-    // // Destructor to free allocated memory
-    // ~Buffer()
-    // {
-    //     if (data)
-    //     {
-    //         delete[] data;
-    //     }
-    //     data = nullptr; // Ensure pointer is reset
-    // }
+    // Destructor to free allocated memory
+    ~Buffer()
+    {
+        if (data)
+        {
+            delete[] data;
+        }
+        data = nullptr; // Ensure pointer is reset
+    }
 
-    // // Copy constructor (to handle copying safely)
-    // Buffer(const Buffer &other) : data(nullptr), length(other.length)
-    // {
-    //     if (other.data)
-    //     {
-    //         data = new uint8_t[length];
-    //         memcpy(data, other.data, length);
-    //     }
-    // }
+    // Copy constructor (to handle copying safely)
+    Buffer(const Buffer &other) : data(nullptr), length(other.length)
+    {
+        if (other.data)
+        {
+            data = new uint8_t[length];
+            memcpy(data, other.data, length);
+        }
+    }
 
-    // // Move constructor (for efficient transfers)
-    // Buffer(Buffer &&other) noexcept : data(other.data), length(other.length)
-    // {
-    //     other.data = nullptr;
-    //     other.length = 0;
-    // }
+    // Move constructor (for efficient transfers)
+    Buffer(Buffer &&other) noexcept : data(other.data), length(other.length)
+    {
+        other.data = nullptr;
+        other.length = 0;
+    }
 
-    // // Copy assignment operator
-    // Buffer &operator=(const Buffer &other)
-    // {
-    //     if (this != &other)
-    //     {
-    //         delete[] data;
-    //         length = other.length;
-    //         data = new uint8_t[length];
-    //         memcpy(data, other.data, length);
-    //     }
-    //     return *this;
-    // }
+    // Copy assignment operator
+    Buffer &operator=(const Buffer &other)
+    {
+        if (this != &other)
+        {
+            delete[] data;
+            length = other.length;
+            data = new uint8_t[length];
+            memcpy(data, other.data, length);
+        }
+        return *this;
+    }
 
-    // // Move assignment operator
-    // Buffer &operator=(Buffer &&other) noexcept
-    // {
-    //     if (this != &other)
-    //     {
-    //         delete[] data;
-    //         data = other.data;
-    //         length = other.length;
-    //         other.data = nullptr;
-    //         other.length = 0;
-    //     }
-    //     return *this;
-    // }
+    // Move assignment operator
+    Buffer &operator=(Buffer &&other) noexcept
+    {
+        if (this != &other)
+        {
+            delete[] data;
+            data = other.data;
+            length = other.length;
+            other.data = nullptr;
+            other.length = 0;
+        }
+        return *this;
+    }
 
     // Getter for []
     uint8_t operator[](uint16_t index) const
@@ -87,7 +87,7 @@ struct Buffer
         return data[index];
     }
 
-    String toString()
+    String toString(uint8_t outNumberTypeBase = 10)
     {
         if (!length || !data)
             return "Buffer<NULL>";
@@ -96,7 +96,7 @@ struct Buffer
 
         for (uint16_t i = 0; i < length; i++)
         {
-            out += String(data[i], HEX) + (i == (length - 1) ? "" : ", ");
+            out += String(data[i], outNumberTypeBase) + (i == (length - 1) ? "" : ", ");
         }
 
         return out + ">";

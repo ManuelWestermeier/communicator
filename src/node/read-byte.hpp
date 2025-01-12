@@ -35,3 +35,37 @@ uint8_t rawReadByte(uint8_t pin, int delayTime)
 
     return value;
 }
+
+struct RawPocket
+{
+    bool isFollowing;
+    uint8_t data;
+};
+
+RawPocket rawReadByteWF(uint8_t pin, int delayTime)
+{
+    RawPocket pocket;
+    pocket.data = 0;
+
+    // Wait for the start signal (HIGH state)
+    while (digitalRead(pin) != HIGH)
+        ;
+
+    delayMicroseconds(delayTime * 1.5);
+
+    pocket.isFollowing = (digitalRead(pin) == HIGH);
+    delayMicroseconds(delayTime);
+
+    // Read each bit
+    for (uint8_t i = 0; i < 8; i++)
+    {
+        // Sample the bit
+        if (digitalRead(pin) == HIGH)
+        {
+            pocket.data |= (1 << i); // Set bit in LSB-first order
+        }
+        delayMicroseconds(delayTime);
+    }
+
+    return pocket;
+}

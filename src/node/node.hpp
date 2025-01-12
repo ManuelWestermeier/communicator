@@ -38,9 +38,19 @@ struct Node
         rawSendByte(value, outPin, sendDelay);
     }
 
+    void sendByteWF(uint8_t value, bool isFollowing)
+    {
+        rawSendByteWF(value, outPin, sendDelay, isFollowing);
+    }
+
     uint8_t readByte()
     {
         return rawReadByte(inpPin, sendDelay);
+    }
+
+    RawPocket readByteWF()
+    {
+        return rawReadByteWF(inpPin, sendDelay);
     }
 
     void sendString(String value)

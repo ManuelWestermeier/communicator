@@ -26,8 +26,8 @@ if errorlevel 1 (
     exit /b 1
 )
 
-REM Upload to COM4
-platformio run --target upload --upload-port COM4
+REM Upload to COM6
+platformio run --target upload --upload-port COM6
 if errorlevel 1 (
     echo Failed to upload to COM port 4. Aborting.
     exit /b 1
