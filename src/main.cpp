@@ -21,12 +21,17 @@ void setup()
 
 void loop()
 {
+    return;
 #if IS_SENDING
-    // network.sendByteWF(111, true);
-    // delay(1000);
+    auto start = micros();
+    network.connection.sendByteWF(111, true);
+    auto end = micros();
+    Serial.println(end - start);
+    Serial.println((end - start) / network.connection.sendDelay);
+    delay(1000);
 #else
-    // auto pocket = network.readByteWF();
-    // Serial.println(pocket.isFollowing ? "is f" : "is n f");
-    // Serial.println(pocket.data);
+    auto pocket = network.connection.readByteWF();
+    Serial.println(pocket.isFollowing ? "is f" : "is n f");
+    Serial.println(pocket.data);
 #endif
 }

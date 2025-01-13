@@ -27,51 +27,82 @@ namespace Networking
         SEND_TO_MAC_INNER_NETWORK = 21      // Send a message to a user in the network by MAC address
     };
 
-    typedef std::function<void()> PacketHandlerFunction;
-    std::map<NetworkPacketTypes, PacketHandlerFunction> packetHandlers = {
-        {IS_HERE, []() { //
-                         //  std::cout << "Default handler for IS_HERE\n";
-         }},
-        {HERE_IS, []() { //
-                         //  std::cout << "Default handler for HERE_IS\n";
-         }},
-        {JOIN, []() { //
-                      //  std::cout << "Default handler for JOIN\n";
-         }},
-        {ACCEPT, []() { //
-                        //  std::cout << "Default handler for ACCEPT\n";
-         }},
-        {JOINED, []() { //
-                        //  std::cout << "Default handler for JOINED\n";
-         }},
-        {WHO_IS_IN_THE_GROUP, []() { //
-                                     //  std::cout << "Default handler for WHO_IS_IN_THE_GROUP\n";
-         }},
-        {I_AM_IN_THE_GROUP, []() { //
-                                   //  std::cout << "Default handler for I_AM_IN_THE_GROUP\n";
-         }},
-        {WRONG_SIGN, []() { //
-                            //  std::cout << "Default handler for WRONG_SIGN\n";
-         }},
-        {WRONG_SIGN_PACKET_IS_CORRUPTED, []() { //
-                                                //  std::cout << "Default handler for WRONG_SIGN_PACKET_IS_CORRUPTED\n";
-         }},
-        {SEND, []() { //
-                      //  std::cout << "Default handler for SEND\n";
-         }},
-        {SEND_TO_MULTIPLE_USERS, []() { //
-                                        //  std::cout << "Default handler for SEND_TO_MULTIPLE_USERS\n";
-         }},
-        {BROADCAST_INNER_GROUP, []() { //
-                                       //  std::cout << "Default handler for BROADCAST_INNER_GROUP\n";
-         }},
-        {BROADCAST_INNER_NETWORK, []() { //
-                                         //  std::cout << "Default handler for BROADCAST_INNER_NETWORK\n";
-         }},
-        {SEND_TO_MAC_INNER_NETWORK, []() { //
-                                           //  std::cout << "Default handler for SEND_TO_MAC_INNER_NETWORK\n";
-         }}};
-    ;
+    // Packet handler type
+    typedef std::function<void(const Networking::Network &)> PacketHandlerFunction;
+
+    // Initialization of packetHandlers map
+    std::map<Networking::NetworkPacketTypes, Networking::PacketHandlerFunction> packetHandlers = {
+        {IS_HERE, ([](const Networking::Network &net)
+                   {
+                       // Default handler for IS_HERE
+                       // std::cout << "Default handler for IS_HERE\n";
+                   })},
+        {HERE_IS, ([](const Networking::Network &net)
+                   {
+                       // Default handler for HERE_IS
+                       // std::cout << "Default handler for HERE_IS\n";
+                   })},
+        {JOIN, ([](const Networking::Network &net)
+                {
+                    // Default handler for JOIN
+                    // std::cout << "Default handler for JOIN\n";
+                })},
+        {ACCEPT, ([](const Networking::Network &net)
+                  {
+                      // Default handler for ACCEPT
+                      // std::cout << "Default handler for ACCEPT\n";
+                  })},
+        {JOINED, ([](const Networking::Network &net)
+                  {
+                      // Default handler for JOINED
+                      // std::cout << "Default handler for JOINED\n";
+                  })},
+        {WHO_IS_IN_THE_GROUP, ([](const Networking::Network &net)
+                               {
+                                   // Default handler for WHO_IS_IN_THE_GROUP
+                                   // std::cout << "Default handler for WHO_IS_IN_THE_GROUP\n";
+                               })},
+        {I_AM_IN_THE_GROUP, ([](const Networking::Network &net)
+                             {
+                                 // Default handler for I_AM_IN_THE_GROUP
+                                 // std::cout << "Default handler for I_AM_IN_THE_GROUP\n";
+                             })},
+        {WRONG_SIGN, ([](const Networking::Network &net)
+                      {
+                          // Default handler for WRONG_SIGN
+                          // std::cout << "Default handler for WRONG_SIGN\n";
+                      })},
+        {WRONG_SIGN_PACKET_IS_CORRUPTED, ([](const Networking::Network &net)
+                                          {
+                                              // Default handler for WRONG_SIGN_PACKET_IS_CORRUPTED
+                                              // std::cout << "Default handler for WRONG_SIGN_PACKET_IS_CORRUPTED\n";
+                                          })},
+        {SEND, ([](const Networking::Network &net)
+                {
+                    // Default handler for SEND
+                    // std::cout << "Default handler for SEND\n";
+                })},
+        {SEND_TO_MULTIPLE_USERS, ([](const Networking::Network &net)
+                                  {
+                                      // Default handler for SEND_TO_MULTIPLE_USERS
+                                      // std::cout << "Default handler for SEND_TO_MULTIPLE_USERS\n";
+                                  })},
+        {BROADCAST_INNER_GROUP, ([](const Networking::Network &net)
+                                 {
+                                     // Default handler for BROADCAST_INNER_GROUP
+                                     // std::cout << "Default handler for BROADCAST_INNER_GROUP\n";
+                                 })},
+        {BROADCAST_INNER_NETWORK, ([](const Networking::Network &net)
+                                   {
+                                       // Default handler for BROADCAST_INNER_NETWORK
+                                       // std::cout << "Default handler for BROADCAST_INNER_NETWORK\n";
+                                   })},
+        {SEND_TO_MAC_INNER_NETWORK, ([](const Networking::Network &net)
+                                     {
+                                         // Default handler for SEND_TO_MAC_INNER_NETWORK
+                                         // std::cout << "Default handler for SEND_TO_MAC_INNER_NETWORK\n";
+                                     })},
+    };
 
     struct User
     {
@@ -108,6 +139,7 @@ namespace Networking
     struct Network
     {
         Node connection;
+        std::function<void(uint8_t errorType)> onError = nullptr;
 
         void init(uint8_t inpPin, uint8_t outPin, int sendDelay)
         {
@@ -131,7 +163,7 @@ namespace Networking
                 xTaskCreate(
                     [](void *context)
                     {
-                        static_cast<Network *>(context)->update();
+                        static_cast<Network *>(context)->run();
                     },
                     "NetworkUpdateTask", // Task name
                     4096,                // Stack size (adjust as necessary)
@@ -164,9 +196,9 @@ namespace Networking
             pocketsToSend.push_back(data);
         }
 
-        void waitForNewPacketStart()
+        void waitForBytePacketEnd()
         {
-            auto timeToWait = micros() + (connection.sendDelay * 12);
+            auto timeToWait = micros() + (connection.sendDelay * 13);
             while (true)
             {
                 auto now = micros();
@@ -181,19 +213,38 @@ namespace Networking
             }
         }
 
+        void onPacketEnd()
+        {
+            if (pocketsToSend.size() != 0)
+            {
+            }
+        }
+
         void update()
         {
-            waitForNewPacketStart();
             auto currentPocket = connection.readByteWF();
 
             if (currentPocket.isFollowing)
             {
-                // continue;
+                return;
             }
 
-            if (pocketsToSend.size() != 0)
+            if (Networking::packetHandlers.find(static_cast<Networking::NetworkPacketTypes>(currentPocket.data)) == Networking::packetHandlers.end())
             {
+                if (!onError)
+                    return;
+                onError(currentPocket.data);
             }
+        }
+
+        void run()
+        {
+            // wait for byte end
+            waitForBytePacketEnd();
+
+            // update
+            while (isRunning)
+                update();
         }
     };
 
